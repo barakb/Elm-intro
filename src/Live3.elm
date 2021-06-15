@@ -4,7 +4,7 @@ import Browser
 import Html exposing (Html, button, div, h1, h3, img, input, label, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Random exposing (Generator)
+import Random
 
 
 baseUrl =
@@ -14,15 +14,21 @@ baseUrl =
 type Msg
     = SelectImage String
     | SurpriseMe
-    | SetThumbSize ThumbSize
+    | SetThumbSize ThumbnailSize
     | SelectIndex Int
 
 
 type alias Model =
     { images : List { image : String }
     , selected : String
-    , thumbSize : ThumbSize
+    , thumbSize : ThumbnailSize
     }
+
+
+type ThumbnailSize
+    = Small
+    | Medium
+    | Large
 
 
 initialModel : Model
@@ -33,8 +39,13 @@ initialModel =
         , { image = "3.jpeg" }
         ]
     , selected = "2.jpeg"
-    , thumbSize = Med
+    , thumbSize = Medium
     }
+
+
+randomPhotoPicker : Random.Generator Int
+randomPhotoPicker =
+    Random.int 0 (List.length initialModel.images)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -44,24 +55,32 @@ update msg model =
             ( { model | selected = img }, Cmd.none )
 
         SurpriseMe ->
-            ( { model | selected = "2.jpeg" }, Random.generate SelectIndex randomInt )
+            ( { model | selected = "2.jpeg" }, Random.generate SelectIndex randomPhotoPicker )
 
-        SetThumbSize size ->
-            ( { model | thumbSize = size }, Cmd.none )
+        SetThumbSize thumbnailSize ->
+            ( { model | thumbSize = thumbnailSize }, Cmd.none )
 
-        SelectIndex int ->
-            ( model, Cmd.none )
-
-
-randomInt : Generator Int
-randomInt =
-    Random.int 0 (List.length initialModel.images)
+        SelectIndex i ->
+            ( { model | selected = select model.selected model.images i }, Cmd.none )
 
 
-type ThumbSize
-    = Small
-    | Med
-    | Large
+select : String -> List { a | image : String } -> Int -> String
+select def images i =
+    let
+        l =
+            List.map .image images
+    in
+    Maybe.withDefault def (index i l)
+
+
+index : Int -> List a -> Maybe a
+index i l =
+    case List.drop i l of
+        [] ->
+            Nothing
+
+        h :: _ ->
+            Just h
 
 
 view : Model -> Html Msg
@@ -70,9 +89,8 @@ view model =
         [ h1 [] [ text "Photo Groove" ]
         , button [ onClick SurpriseMe ] [ text "Surprise Me!" ]
         , h3 [] [ text "Thumbnail Size:" ]
-        , div [ id "choose-size" ]
-            (List.map viewChooseThumbSize [ Small, Med, Large ])
-        , div [ id "thumbnails", class (thumbSizeToString model.thumbSize) ] (List.map (viewThumb model) model.images)
+        , div [ id "choose-size" ] (List.map viewSizeChooser [ Small, Medium, Large ])
+        , div [ id "thumbnails", class (sizeToString model.thumbSize) ] (List.map (viewThumb model) model.images)
         , img
             [ class "large"
             , src (baseUrl ++ "large/" ++ model.selected)
@@ -81,21 +99,21 @@ view model =
         ]
 
 
-viewChooseThumbSize : ThumbSize -> Html Msg
-viewChooseThumbSize size =
+viewSizeChooser : ThumbnailSize -> Html Msg
+viewSizeChooser size =
     label []
         [ input [ type_ "radio", name "size", onClick (SetThumbSize size) ] []
-        , text (thumbSizeToString size)
+        , text (sizeToString size)
         ]
 
 
-thumbSizeToString : ThumbSize -> String
-thumbSizeToString thumbSize =
-    case thumbSize of
+sizeToString : ThumbnailSize -> String
+sizeToString thumbnailSize =
+    case thumbnailSize of
         Small ->
             "small"
 
-        Med ->
+        Medium ->
             "med"
 
         Large ->

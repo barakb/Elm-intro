@@ -78,8 +78,16 @@ elm-live src/Example.elm -- --output app.js
    * move to Browser.sandbox
 5. * Adding type annotations
    * Reusing type annotations with aliases
-   * Adding surprise me.
-6. * Enumerating possibilities with custom types (ThumbnailSize)
+   * Adding surprise me.  (, button [] [ text "Surprise Me!" ])
+   * Adding select thumb size ( , h3 [] [ text "Thumbnail Size:" ]
+     , div [ id "choose-size" ] [])
+     ( label []
+     [ input [ type_ "radio", name "size"] []
+     , text "Small"
+     ])
+6. * Browser.element
+   * Random.generate  
+   * Enumerating possibilities with custom types (ThumbnailSize)
    * Using case expression with custom types 
 
 

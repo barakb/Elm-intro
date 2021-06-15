@@ -59,7 +59,9 @@ view model =
             [ text "Surprise Me!" ]
         , h3 [] [ text "Thumbnail Size:" ]
         , div [ id "choose-size" ]
-            [ viewSizeChooser Small, viewSizeChooser Medium, viewSizeChooser Large ]
+            (List.map viewSizeChooser [ Small, Medium, Large ])
+
+        --[ viewSizeChooser Small, viewSizeChooser Medium, viewSizeChooser Large ]
         , div [ id "thumbnails" ] (List.map (viewThumbnail model.selectedUrl) model.photos)
         , img [ class "large", src (urlPrefix ++ "large/" ++ model.selectedUrl) ] []
         ]

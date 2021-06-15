@@ -4,7 +4,6 @@ import Browser
 import Html exposing (Html, button, div, h1, h3, img, input, label, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Random exposing (Generator)
 
 
 baseUrl =
@@ -14,15 +13,20 @@ baseUrl =
 type Msg
     = SelectImage String
     | SurpriseMe
-    | SetThumbSize ThumbSize
-    | SelectIndex Int
+    | SetThumbSize ThumbnailSize
 
 
 type alias Model =
     { images : List { image : String }
     , selected : String
-    , thumbSize : ThumbSize
+    , thumbSize : ThumbnailSize
     }
+
+
+type ThumbnailSize
+    = Small
+    | Medium
+    | Large
 
 
 initialModel : Model
@@ -33,35 +37,21 @@ initialModel =
         , { image = "3.jpeg" }
         ]
     , selected = "2.jpeg"
-    , thumbSize = Med
+    , thumbSize = Medium
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         SelectImage img ->
-            ( { model | selected = img }, Cmd.none )
+            { model | selected = img }
 
         SurpriseMe ->
-            ( { model | selected = "2.jpeg" }, Random.generate SelectIndex randomInt )
+            { model | selected = "2.jpeg" }
 
-        SetThumbSize size ->
-            ( { model | thumbSize = size }, Cmd.none )
-
-        SelectIndex int ->
-            ( model, Cmd.none )
-
-
-randomInt : Generator Int
-randomInt =
-    Random.int 0 (List.length initialModel.images)
-
-
-type ThumbSize
-    = Small
-    | Med
-    | Large
+        SetThumbSize thumbnailSize ->
+            { model | thumbSize = thumbnailSize }
 
 
 view : Model -> Html Msg
@@ -70,9 +60,8 @@ view model =
         [ h1 [] [ text "Photo Groove" ]
         , button [ onClick SurpriseMe ] [ text "Surprise Me!" ]
         , h3 [] [ text "Thumbnail Size:" ]
-        , div [ id "choose-size" ]
-            (List.map viewChooseThumbSize [ Small, Med, Large ])
-        , div [ id "thumbnails", class (thumbSizeToString model.thumbSize) ] (List.map (viewThumb model) model.images)
+        , div [ id "choose-size" ] (List.map viewSizeChooser [ Small, Medium, Large ])
+        , div [ id "thumbnails", class (sizeToString model.thumbSize) ] (List.map (viewThumb model) model.images)
         , img
             [ class "large"
             , src (baseUrl ++ "large/" ++ model.selected)
@@ -81,21 +70,21 @@ view model =
         ]
 
 
-viewChooseThumbSize : ThumbSize -> Html Msg
-viewChooseThumbSize size =
+viewSizeChooser : ThumbnailSize -> Html Msg
+viewSizeChooser size =
     label []
         [ input [ type_ "radio", name "size", onClick (SetThumbSize size) ] []
-        , text (thumbSizeToString size)
+        , text (sizeToString size)
         ]
 
 
-thumbSizeToString : ThumbSize -> String
-thumbSizeToString thumbSize =
-    case thumbSize of
+sizeToString : ThumbnailSize -> String
+sizeToString thumbnailSize =
+    case thumbnailSize of
         Small ->
             "small"
 
-        Med ->
+        Medium ->
             "med"
 
         Large ->
@@ -112,11 +101,9 @@ viewThumb model thumb =
         []
 
 
-main : Program () Model Msg
 main =
-    Browser.element
-        { init = \_ -> ( initialModel, Cmd.none )
+    Browser.sandbox
+        { init = initialModel
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
         }
